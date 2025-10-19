@@ -14,6 +14,13 @@ record_id_counter = 1
 def create_error_response(message, status_code):
     return jsonify({"error": message}), status_code
 
+@app.route("/healthcheck")
+def healthcheck():
+    response_data = {
+        "status": "OK",
+        "timestamp": datetime.datetime.utcnow().isoformat() + "Z"
+    }
+    return jsonify(response_data), 200
 
 @app.route('/user', methods=['POST'])
 def create_user():
