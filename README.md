@@ -1,68 +1,178 @@
-# REST API для Обліку Витрат (Flask)
+# REST API  
+**Flask + SQLAlchemy + PostgreSQL (через Docker)**  
 
-Це базовий REST API застосунок для обліку витрат, створений на Flask. Дані зберігаються в пам'яті застосунку.
+## Визначення варіанту до 3 ЛР
 
-**Задеплоєний проект:** `https://rest-api-lab-2.onrender.com/healthcheck`
+Група: ІО-35.
 
----
+Варіант: 5 mod 3 = 2 (Користувацькі категорії витрат)
 
-## Встановлення та запуск локально
+## Опис проєкту  
+Цей проєкт реалізує REST API для керування **користувачами**, **категоріями витрат** і **фінансовими записами**.  
+Він побудований на Flask з використанням ORM SQLAlchemy, Marshmallow для валідації даних і Flask-Migrate для роботи з міграціями бази даних.  
 
-1.  **Клонуйте репозиторій:**
-    ```bash
-    git clone https://github.com/1afterlyfe/rest-api-lab-2
-    cd rest-api-lab-2
-    ```
+База даних PostgreSQL запускається в контейнері Docker.  
+API підтримує **глобальні** та **індивідуальні** категорії витрат для кожного користувача.
 
-2.  **Створіть та активуйте віртуальне середовище:**
-    ```bash
-    # Для macOS/Linux
-    python -m venv venv
-    source venv/bin/activate
-
-    # Для Windows
-    python -m venv venv
-    .\venv\Scripts\activate
-    ```
-
-3.  **Встановіть залежності:**
-    ```bash
-    pip install -r requirements.txt
-    ```
-
-4.  **Запустіть застосунок:**
-    ```bash
-    python app.py
-    ```
-
-Застосунок буде доступний за адресою `http://127.0.0.1:5000`.
+## Структура проєкту
+```
+rest-api-lab-2/
+│
+├── docker-compose.yaml         # Сервіс PostgreSQL
+├── config.py                   # Конфігурація застосунку
+├── extensions.py                # Ініціалізація ORM і Migrate
+├── models.py                   # ORM-моделі User, Category, Record
+├── schemas.py                  # Marshmallow-схеми
+├── wsgi.py                     # Точка входу Flask
+├── requirements.txt            # Залежності
+│
+├── resources/                  # REST-ресурси (Blueprints)
+│   ├── users.py
+│   ├── categories.py
+│   └── records.py
+│
+├── migrations/                 # Alembic-міграції
+└── README.md                   # Цей файл
+```
 
 ---
 
-## Ендпоінти API
+## Запуск проєкту
 
-### Users
+### Створити та активувати віртуальне середовище
+```bash
+python -m venv venv
+venv\Scripts\activate  # Windows
+```
 
-* `POST /user` - Створює нового користувача.
-    * **Body (JSON):** `{"name": "Your Name"}`
-* `GET /users` - Отримує список всіх користувачів.
-* `GET /user/<user_id>` - Отримує одного користувача по ID.
-* `DELETE /user/<user_id>` - Видаляє користувача по ID.
+### Встановити залежності
+```bash
+pip install -r requirements.txt
+```
 
-### Categories
+### Запустити базу даних у Docker
+```bash
+docker-compose up -d db
+```
 
-* `POST /category` - Створює нову категорію.
-    * **Body (JSON):** `{"name": "Groceries"}`
-* `GET /category` - Отримує список всіх категорій.
-* `GET /category/<category_id>` - Отримує одну категорію по ID.
-* `DELETE /category/<category_id>` - Видаляє категорію по ID.
+(Контейнер створить PostgreSQL на порту **5433**)
 
-### Records
+---
 
-* `POST /record` - Створює новий запис про витрати.
-    * **Body (JSON):** `{"user_id": 1, "category_id": 1, "amount": 99.99}`
-* `GET /record/<record_id>` - Отримує один запис по ID.
-* `DELETE /record/<record_id>` - Видаляє запис по ID.
-* `GET /record` - Отримує список записів з фільтрацією.
-    * **Обов'язково** потрібен хоча б один параметр: `user_id` або `category_id`.
-    * **Приклад:** `GET /record?user_id=1&category_id=2`
+## Налаштування підключення до БД
+У файлі `config.py`:
+```python
+SQLALCHEMY_DATABASE_URI = "postgresql+psycopg://postgres:postgres@localhost:5433/finance_db"
+```
+
+---
+
+## Міграції бази даних
+
+Створити структуру таблиць:
+```bash
+flask --app wsgi db migrate -m "initial tables"
+```
+
+Застосувати міграції:
+```bash
+flask --app wsgi db upgrade
+```
+
+Перевірка у Docker:
+```bash
+docker exec -it rest-api-lab-2-db-1 psql -U postgres -d finance_db -c "\dt"
+```
+
+---
+
+## Запуск сервера
+
+```bash
+flask --app wsgi run
+```
+
+Сервер за замовчуванням працює на:
+```
+http://127.0.0.1:5000/
+```
+
+---
+
+## Основні ендпоінти
+
+### Користувачі
+| Метод | Endpoint | Опис |
+|--------|-----------|------|
+| `POST` | `/users` | створення нового користувача |
+| `GET` | `/users/<id>` | отримати дані користувача |
+| `DELETE` | `/users/<id>` | видалити користувача |
+
+---
+
+### Категорії
+| Метод | Endpoint | Опис |
+|--------|-----------|------|
+| `GET` | `/categories` | список усіх категорій (глобальних + користувацьких) |
+| `POST` | `/categories` | створення нової категорії |
+| `DELETE` | `/categories/<id>` | видалення категорії |
+
+#### Приклад запиту:
+```json
+POST /categories
+{
+  "name": "Food",
+  "is_global": true
+}
+```
+
+---
+
+### Записи (Records)
+| Метод | Endpoint | Опис |
+|--------|-----------|------|
+| `GET` | `/records` | список фінансових записів |
+| `POST` | `/records` | створити запис витрат |
+| `DELETE` | `/records/<id>` | видалити запис |
+
+#### Приклад створення запису:
+```json
+POST /records
+{
+  "amount": 250.0,
+  "description": "Groceries",
+  "category_id": 1,
+  "user_id": 1
+}
+```
+
+---
+
+## Приклади тестування через Postman
+- **Headers:**  
+  `Content-Type: application/json`  
+- **Тіло запиту:** raw → JSON
+- Якщо отримаєш `"Missing data for required field"`, перевір, чи в Postman вибрано `JSON`, а не `Text`.
+
+---
+
+## Команди для зручності
+| Команда | Призначення |
+|----------|--------------|
+| `docker ps` | перевірити стан контейнера |
+| `docker logs rest-api-lab-2-db-1` | подивитись логи PostgreSQL |
+| `flask db current` | перевірити версію міграцій |
+| `flask db downgrade` | відкотити останню міграцію |
+
+---
+
+## Теги
+Використовується семантичне версіонування:
+```
+v2.0.0 – Лабораторна робота №2
+```
+
+---
+
+##  Автор
+**Гуренко Роман ІО-35**
