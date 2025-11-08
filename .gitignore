@@ -10,3 +10,8 @@ env/
 
 .DS_Store
 Thumbs.db
+
+*.sqlite3
+.mypy_cache/
+.idea/
+.vscode/
