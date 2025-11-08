@@ -1,2 +1,8 @@
 Flask==3.1.0
+flask-smorest
+flask-sqlalchemy
+Flask-Migrate
+marshmallow
+marshmallow-sqlalchemy
+psycopg2-binary
 gunicorn==22.0.0
