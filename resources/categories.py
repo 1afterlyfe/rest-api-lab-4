@@ -1,6 +1,7 @@
 from flask.views import MethodView
 from flask_smorest import Blueprint, abort
 from sqlalchemy import or_
+from flask_jwt_extended import jwt_required
 
 from extensions import db
 from models import CategoryModel, UserModel
@@ -12,13 +13,14 @@ blp = Blueprint(
     description="Глобальні та користувацькі категорії витрат",
 )
 
-
 @blp.route("/categories")
 class CategoriesList(MethodView):
+    @jwt_required()
     @blp.response(200, CategorySchema(many=True))
     def get(self):
         return CategoryModel.query.order_by(CategoryModel.id).all()
 
+    @jwt_required()
     @blp.arguments(CategoryCreateSchema)
     @blp.response(201, CategorySchema)
     def post(self, data):
@@ -51,6 +53,7 @@ class CategoriesList(MethodView):
 
 @blp.route("/users/<int:user_id>/categories")
 class UserVisibleCategories(MethodView):
+    @jwt_required()
     @blp.response(200, CategorySchema(many=True))
     def get(self, user_id):
 
@@ -65,15 +68,16 @@ class UserVisibleCategories(MethodView):
 
         return categories
 
-
 @blp.route("/categories/<int:category_id>")
 class CategoryResource(MethodView):
+    @jwt_required()
     @blp.response(200, CategorySchema)
     def get(self, category_id):
         return CategoryModel.query.get_or_404(
             category_id, description="Категорія не знайдена"
         )
 
+    @jwt_required()
     @blp.response(204)
     def delete(self, category_id):
         category = CategoryModel.query.get_or_404(

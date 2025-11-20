@@ -6,3 +6,5 @@ marshmallow
 marshmallow-sqlalchemy
 psycopg2-binary
 gunicorn==22.0.0
+flask-jwt-extended
+passlib

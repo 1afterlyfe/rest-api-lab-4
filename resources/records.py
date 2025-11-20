@@ -3,6 +3,7 @@ from flask_smorest import Blueprint, abort
 from extensions import db
 from models import RecordModel, UserModel, CategoryModel
 from schemas import RecordSchema
+from flask_jwt_extended import jwt_required
 
 blp = Blueprint(
     "Records",
@@ -10,13 +11,14 @@ blp = Blueprint(
     description="Операції з витратами",
 )
 
-
 @blp.route("/records")
 class RecordsList(MethodView):
+    @jwt_required()
     @blp.response(200, RecordSchema(many=True))
     def get(self):
         return RecordModel.query.order_by(RecordModel.id).all()
 
+    @jwt_required()
     @blp.arguments(RecordSchema)
     @blp.response(201, RecordSchema)
     def post(self, data):
