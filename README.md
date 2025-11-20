@@ -1,178 +1,161 @@
-# REST API  
-**Flask + SQLAlchemy + PostgreSQL (через Docker)**  
 
-## Визначення варіанту до 3 ЛР
+# Лабораторна робота №3  
+## Розробка REST API. Автентифікація. Тестування за допомогою Postman Flow  
+**Студент:** Гуренко Роман Юрійович  
+**Група:** ІО-35  
+**Предмет:** Back-end розробка / Web API  
 
-Група: ІО-35.
+---
 
-Варіант: 5 mod 3 = 2 (Користувацькі категорії витрат)
+## Мета роботи
+1. Створити REST API з підтримкою CRUD-операцій.  
+2. Реалізувати реєстрацію та автентифікацію користувачів через JWT.  
+3. Налаштувати захист ендпоінтів за допомогою `@jwt_required`.  
+4. Використати **Postman Flow** для автоматичного тестування всіх запитів.  
 
-## Опис проєкту  
-Цей проєкт реалізує REST API для керування **користувачами**, **категоріями витрат** і **фінансовими записами**.  
-Він побудований на Flask з використанням ORM SQLAlchemy, Marshmallow для валідації даних і Flask-Migrate для роботи з міграціями бази даних.  
-
-База даних PostgreSQL запускається в контейнері Docker.  
-API підтримує **глобальні** та **індивідуальні** категорії витрат для кожного користувача.
+---
 
 ## Структура проєкту
+
 ```
-rest-api-lab-2/
-│
-├── docker-compose.yaml         # Сервіс PostgreSQL
-├── config.py                   # Конфігурація застосунку
-├── extensions.py                # Ініціалізація ORM і Migrate
-├── models.py                   # ORM-моделі User, Category, Record
-├── schemas.py                  # Marshmallow-схеми
-├── wsgi.py                     # Точка входу Flask
-├── requirements.txt            # Залежності
-│
-├── resources/                  # REST-ресурси (Blueprints)
-│   ├── users.py
-│   ├── categories.py
-│   └── records.py
-│
-├── migrations/                 # Alembic-міграції
-└── README.md                   # Цей файл
+rest-api-lab-3/
+│── app.py / wsgi.py
+│── extensions.py
+│── models.py
+│── schemas.py
+│── resources/
+│     ├── users.py
+│     ├── categories.py
+│     ├── records.py
+│── migrations/
+│── instance/
+│── .gitignore
+│── requirements.txt
+│── README.md
 ```
+
+---
+
+## Використані технології
+
+| Технологія | Призначення |
+|-----------|-------------|
+| **Flask** | Web-сервер REST API |
+| **Flask-SQLAlchemy** | ORM для роботи з БД |
+| **Flask-Migrate** | Міграції |
+| **Flask-JWT-Extended** | JWT |
+| **Passlib (pbkdf2_sha256)** | Хешування паролів |
+| **SQLite** | Локальна БД |
+| **Postman + Postman Flow** | Тестування API |
+
+---
+
+## Автентифікація (JWT)
+
+### Реєстрація  
+`POST /users`  
+Тіло:
+```json
+{
+  "username": "roman",
+  "password": "qwerty123"
+}
+```
+
+### Логін  
+`POST /login`  
+Повертає:
+```json
+{
+  "access_token": "eyJhbGciOi..."
+}
+```
+
+### Захищені маршрути
+Потребують `"Authorization: Bearer <token>"`:
+
+- `GET /users`
+- `GET /categories`
+- `GET /records`
+- `POST /records`
+- `POST /categories`
+
+---
+
+## CRUD-операції
+
+### Користувачі
+- Реєстрація  
+- Логін  
+- Отримання списку користувачів (JWT)
+
+### Категорії
+- Створення категорії  
+- Перегляд списку  
+- Видалення  
+
+### Фінансові записи
+- Створення запису  
+- Отримання списку  
+- Видалення  
+
+---
+
+## Postman Flow (автоматизація)
+
+Реалізовано pipeline:
+
+1. **Start**
+2. **POST /login**  
+   → Зберігання глобальної змінної `Token`
+3. **GET /users**
+4. **GET /categories**
+5. **GET /records`
+
+Flow обробляє:
+- `token_expired`
+- `invalid_token`
+
+Використовуються глобальні змінні:
+- `base_url`
+- `Token`
 
 ---
 
 ## Запуск проєкту
 
-### Створити та активувати віртуальне середовище
+### 1. Віртуальне середовище
 ```bash
 python -m venv venv
-venv\Scripts\activate  # Windows
+venv\Scripts\activate
 ```
 
-### Встановити залежності
+### 2. Встановлення залежностей
 ```bash
 pip install -r requirements.txt
 ```
 
-### Запустити базу даних у Docker
+### 3. Міграції БД
 ```bash
-docker-compose up -d db
+flask db upgrade
 ```
 
-(Контейнер створить PostgreSQL на порту **5433**)
-
----
-
-## Налаштування підключення до БД
-У файлі `config.py`:
-```python
-SQLALCHEMY_DATABASE_URI = "postgresql+psycopg://postgres:postgres@localhost:5433/finance_db"
-```
-
----
-
-## Міграції бази даних
-
-Створити структуру таблиць:
+### 4. Запуск сервера
 ```bash
-flask --app wsgi db migrate -m "initial tables"
+flask run
 ```
 
-Застосувати міграції:
-```bash
-flask --app wsgi db upgrade
-```
-
-Перевірка у Docker:
-```bash
-docker exec -it rest-api-lab-2-db-1 psql -U postgres -d finance_db -c "\dt"
-```
+Сервер буде доступний на:  
+http://127.0.0.1:5000
 
 ---
 
-## Запуск сервера
+## ✔ Висновки
 
-```bash
-flask --app wsgi run
-```
+У ході виконання лабораторної роботи було:
+- створено REST API з авторизацією через JWT;  
+- реалізовано CRUD-операції для користувачів, категорій та записів;  
+- налаштовано автоматизоване тестування через Postman Flow;  
+- відпрацьовано роботу з базою даних, міграціями та токенами.
 
-Сервер за замовчуванням працює на:
-```
-http://127.0.0.1:5000/
-```
-
----
-
-## Основні ендпоінти
-
-### Користувачі
-| Метод | Endpoint | Опис |
-|--------|-----------|------|
-| `POST` | `/users` | створення нового користувача |
-| `GET` | `/users/<id>` | отримати дані користувача |
-| `DELETE` | `/users/<id>` | видалити користувача |
-
----
-
-### Категорії
-| Метод | Endpoint | Опис |
-|--------|-----------|------|
-| `GET` | `/categories` | список усіх категорій (глобальних + користувацьких) |
-| `POST` | `/categories` | створення нової категорії |
-| `DELETE` | `/categories/<id>` | видалення категорії |
-
-#### Приклад запиту:
-```json
-POST /categories
-{
-  "name": "Food",
-  "is_global": true
-}
-```
-
----
-
-### Записи (Records)
-| Метод | Endpoint | Опис |
-|--------|-----------|------|
-| `GET` | `/records` | список фінансових записів |
-| `POST` | `/records` | створити запис витрат |
-| `DELETE` | `/records/<id>` | видалити запис |
-
-#### Приклад створення запису:
-```json
-POST /records
-{
-  "amount": 250.0,
-  "description": "Groceries",
-  "category_id": 1,
-  "user_id": 1
-}
-```
-
----
-
-## Приклади тестування через Postman
-- **Headers:**  
-  `Content-Type: application/json`  
-- **Тіло запиту:** raw → JSON
-- Якщо отримаєш `"Missing data for required field"`, перевір, чи в Postman вибрано `JSON`, а не `Text`.
-
----
-
-## Команди для зручності
-| Команда | Призначення |
-|----------|--------------|
-| `docker ps` | перевірити стан контейнера |
-| `docker logs rest-api-lab-2-db-1` | подивитись логи PostgreSQL |
-| `flask db current` | перевірити версію міграцій |
-| `flask db downgrade` | відкотити останню міграцію |
-
----
-
-## Теги
-Використовується семантичне версіонування:
-```
-v2.0.0 – Лабораторна робота №2
-```
-
----
-
-##  Автор
-**Гуренко Роман ІО-35**
+Результатом є повністю робочий API з автоматизованою схемою тестування.
